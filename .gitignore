@@ -1,0 +1,8 @@
+# środowisko
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# surowe dane (267 MB, pobierane ręcznie z Kaggle)
+data/raw/*
+!data/raw/.gitkeep
