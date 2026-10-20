@@ -4,7 +4,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.signal import butter, sosfiltfilt
+from sklearn.model_selection import StratifiedGroupKFold
 
+RANDOM_STATE = 42  # stałe ziarno losowości: ten sam podział przy każdym uruchomieniu
 FS = 128  # częstotliwość próbkowania [Hz] wg opisu zbioru
 RAW_PATH = Path(__file__).resolve().parents[1] / "data" / "raw" / "adhdata.csv"
 META_COLS = ["Class", "ID"]
@@ -73,3 +75,16 @@ def build_windows(df, win_sec=4, k=3):
     y = np.concatenate(y_list)
     groups = np.concatenate(groups_list)
     return X, y, groups
+
+
+def subject_split(X, y, groups, n_splits=5, random_state=RANDOM_STATE):
+    """Podział train/test PO OSOBACH: wszystkie okna danej osoby trafiają
+    w całości albo do train, albo do test. Test = 1 z n_splits części osób
+    (n_splits=5 -> ok. 20% osób), z zachowaniem proporcji klas.
+    Zwraca indeksy okien: train_idx, test_idx."""
+    splitter = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    train_idx, test_idx = next(splitter.split(X, y, groups))  # bierzemy pierwszą z 5 części jako test
+
+    # zabezpieczenie: żadna osoba nie może być jednocześnie w train i test
+    assert set(groups[train_idx]).isdisjoint(groups[test_idx]), "Ta sama osoba w train i test!"
+    return train_idx, test_idx
