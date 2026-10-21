@@ -3,8 +3,8 @@
 Zadanie rekrutacyjne do sekcji AI koła naukowego **KN Neuron** (Politechnika Wrocławska).
 Binarny klasyfikator ADHD vs grupa kontrolna na podstawie sygnałów EEG, z **podziałem po osobach (subject split)**.
 
-> Status: EDA, preprocessing, podział, cechy i porównanie modeli walidacją krzyżową są gotowe.
-> W trakcie: końcowa ewaluacja na zbiorze testowym.
+> Status: gotowe. EDA, preprocessing, podział, cechy, porównanie modeli walidacją krzyżową
+> i jednorazowa ewaluacja wybranego modelu na zbiorze testowym.
 
 ## Dane
 
@@ -31,7 +31,15 @@ pip install -r requirements.txt
 python -m src.train
 ```
 
-Wynik trafia do `results/cv_results.csv`. Wszystkie losowe kroki używają `RANDOM_STATE = 42`.
+Wynik trafia do `results/cv_results.csv`.
+
+4. Końcowa ewaluacja wybranego modelu na zbiorze testowym:
+
+```bash
+python -m src.final_eval
+```
+
+Metryki trafiają do `results/test_results.csv`, a predykcje dla każdej osoby testowej do `results/test_subjects.csv`. Wszystkie losowe kroki używają `RANDOM_STATE = 42`.
 
 ## Struktura
 
@@ -40,6 +48,7 @@ src/data.py       wczytanie CSV, filtr, okienkowanie, odrzucanie artefaktów, po
 src/features.py   moc w pasmach (Welch) + theta/beta -> 95 cech na okno
 src/models.py     regresja logistyczna, Random Forest, MLP (PyTorch)
 src/train.py      eksperyment: CV po osobach na zbiorze treningowym
+src/final_eval.py jednorazowa ocena wybranego modelu na zbiorze testowym
 src/evaluate.py   metryki, agregacja okien do poziomu osoby
 notebooks/eda.ipynb   tylko analiza eksploracyjna
 results/          wykresy i wyniki
@@ -73,6 +82,30 @@ Wnioski:
 - Przy uczciwym podziale po osobach wyniki są **niewiele powyżej losowych**. Prace raportujące na tym zbiorze accuracy powyżej 95% zwykle dzielą okna, a nie osoby.
 - Odchylenie między foldami (0,1–0,2) jest większe niż różnice między modelami. Na tych danych nie da się wiarygodnie wskazać zwycięzcy.
 - Jako model główny wybrano **Random Forest na cechach względnych**, przed spojrzeniem na test.
+
+## Wynik na zbiorze testowym (25 osób: 13 ADHD, 12 Control)
+
+Random Forest na cechach względnych, uczony na wszystkich 96 osobach treningowych i oceniony na teście jeden raz.
+Osoba jest klasyfikowana jako ADHD, gdy średnie prawdopodobieństwo z jej okien wynosi co najmniej 0,5.
+
+| Metryka | Wynik |
+|---|---|
+| AUC okien | 0,631 |
+| AUC osób | 0,744 |
+| Accuracy (osoby) | 0,64 (16 z 25) |
+| Czułość: wykryte ADHD | 0,77 (10 z 13) |
+| Swoistość: rozpoznana grupa kontrolna | 0,50 (6 z 12) |
+
+|  | przewidziane Control | przewidziane ADHD |
+|---|---|---|
+| **Control** | 6 | 6 |
+| **ADHD** | 3 | 10 |
+
+Wnioski:
+
+- AUC osób na teście (0,744) jest wyższe od średniej z CV (0,619), ale mieści się w rozrzucie foldów (0,36–0,88). Przy 25 osobach jedna przestawiona osoba zmienia accuracy o 4 punkty procentowe, więc to raczej szczęśliwy podział niż dowód, że model jest lepszy, niż pokazała CV.
+- Model jest mało pewny: średnie prawdopodobieństwa osób leżą w przedziale 0,18–0,64, większość blisko 0,5. Przy progu 0,5 model przechyla się w stronę ADHD (6 fałszywych alarmów wobec 3 przeoczeń).
+- Ogólny obraz się nie zmienia: przy podziale po osobach sygnał jest słaby, a wynik jest daleko od >95% raportowanych przy podziale okien.
 
 ## Obserwacje z EDA i ograniczenia
 

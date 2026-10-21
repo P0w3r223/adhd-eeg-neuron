@@ -1,0 +1,2 @@
+auc_window,auc_subject,accuracy_subject,sensitivity_subject,specificity_subject,tn,fp,fn,tp
+0.6314433610208258,0.7435897435897436,0.64,0.7692307692307693,0.5,6,6,3,10
