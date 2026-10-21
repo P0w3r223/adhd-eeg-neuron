@@ -7,6 +7,9 @@ __pycache__/
 CLAUDE.md
 .claude/
 
+# prywatne materiały do przygotowania się do rozmowy
+docs/omowienie_kodu.*
+
 # surowe dane (267 MB, pobierane ręcznie z Kaggle)
 data/raw/*
 !data/raw/.gitkeep
